@@ -1,0 +1,2 @@
+id,name,address,city,state,zip,county,phone,type,ownership,emergency,quality,LAT,LON
+12345,My Hospital,123 Main St,Boston,MA,02101,Suffolk,(555) 555-5555,General Acute Care Hospital,Government Federal,Yes,5,42.3601,-71.0589
