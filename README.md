@@ -20,8 +20,8 @@ A REST API that generates FHIR resources from Synthea data. The API enables gene
 ## File Structure
 
 - `fhir_samples/` - Sample FHIR data from [Synthea Sample Data (R4, Sept 2019)](https://synthetichealth.github.io/synthea-sample-data/downloads/synthea_sample_data_fhir_r4_sep2019.zip)
-- `generator/` - Java-based Synthea generator
-- `fhir/` - Directory for FHIR resources _(to be populated)_
+- `synthea/` - Java-based Synthea generator ([go to synthea-with-dependencies.md](/synthea/synthea-with-dependencies.md))
+
 
 ## References
 

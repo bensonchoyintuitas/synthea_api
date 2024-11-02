@@ -1,2 +1,4 @@
 id,name,address,city,state,zip,county,phone,type,ownership,emergency,quality,LAT,LON
-12345,My Hospital,123 Main St,Boston,MA,02101,Suffolk,(555) 555-5555,General Acute Care Hospital,Government Federal,Yes,5,42.3601,-71.0589
+10001,Hospital 1,55 Fruit Street,Boston,MA,02114,Suffolk,(617) 726-2000,General Acute Care Hospital,Voluntary non-profit - Private,Yes,5,42.3632,-71.0686
+10002,Hospital 2,75 Francis Street,Boston,MA,02115,Suffolk,(617) 732-5500,General Acute Care Hospital,Voluntary non-profit - Private,Yes,5,42.3354,-71.1070
+10003,Hospital 3,330 Brookline Avenue,Boston,MA,02215,Suffolk,(617) 667-7000,General Acute Care Hospital,Voluntary non-profit - Private,Yes,5,42.3389,-71.1031
