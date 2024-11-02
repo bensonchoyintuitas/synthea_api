@@ -18,6 +18,11 @@ sudo apt install openjdk-11-jre-headless
 
 ### Basic Usage
 ```bash
+# Generate 1 patient with specific date, custom config and one day timeperiod
+java -jar synthea-with-dependencies.jar  -c synthea.properties -p 1 -r $(date +%Y%M%D)
+```
+### Other examples 
+```bash
 # Generate 10 patients with seed 123
 java -jar synthea-with-dependencies.jar --exporter.fhir.use_us_core_ig true -p 10 -s 123
 
@@ -27,9 +32,9 @@ java -jar synthea-with-dependencies.jar --exporter.fhir.use_us_core_ig true -p 1
 # Generate 1 patient with current date and custom config
 java -jar synthea-with-dependencies.jar --exporter.fhir.use_us_core_ig true -p 1 -c synthea.properties -r $(date +%Y%m%d)
 
-java -jar synthea-with-dependencies.jar  -c synthea.properties -p 1 -r $(date +%Y%m%d)
-```
 
+java -jar synthea-with-dependencies.jar  -c synthea.properties -p 1 -r 20241101 -t 1
+```
 ## Command Line Options
 
 ### Common Examples
