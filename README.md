@@ -30,8 +30,19 @@ sudo apt install openjdk-11-jre-headless
 
 ## Running the API
 ```bash
+# Run the API
 python api.py
 ```
+
+## Calling the API
+```bash
+# Generate a bundle (clears out previous bundle)
+curl -X POST http://localhost:5000/generate_bundle
+
+# Extract a patient (requires bundle to be generated first)
+curl -X POST http://localhost:5000/generate_patient
+```
+
 
 ## Project Status
 🚧 In Development - Stage 3
