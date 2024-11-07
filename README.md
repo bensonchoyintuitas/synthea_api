@@ -6,7 +6,10 @@ A REST API that generates FHIR resources from Synthea data. The API enables gene
 
 1. **Stage 1**: Generate a complete bundle for a single patient
 2. **Stage 2**: Generate a complete bundle for a single patient with customizable input parameters
-3. **Stage 3**: Generate a complete bundle to represent patient history, and extract only the demographic data. Then revert to LLM to generate the condition, encounter, treatment and medication resources. *(see Work in progress notes)*
+3. **Stage 3**: Generate a complete bundle to represent patient history, and extract only the demographic data. Return that via API.
+4. **Stage 4**: (external downstream app) Then revert to LLM to generate the condition, encounter, treatment and medication resources. *(see Work in progress notes)*
+
+
 
 ## Project Status
 
