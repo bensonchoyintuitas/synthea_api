@@ -1,6 +1,40 @@
-# Synthea API
+# Synthea API Wrapper
+A Flask-based REST API wrapper for Synthea patient data generator.
 
-A REST API that generates FHIR resources from Synthea data. The API enables generation of patient FHIR resources based on specified input parameters.
+## Prerequisites
+
+- Python 3.7+
+- Java Runtime Environment (JRE)
+- Synthea with dependencies JAR file in the root directory (see [synthea-with-dependencies.md](/synthea-with-dependencies.md))
+
+
+## Installation
+1. Create a virtual environment and install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate 
+pip install -r requirements.txt
+```
+2. Download synthea-with-dependencies.jar 
+```bash
+# Download Synthea
+wget https://github.com/synthetichealth/synthea/releases/download/master-branch-latest/synthea-with-dependencies.jar
+
+# and place it in this working directory
+
+# Install Java (if needed)
+sudo apt install openjdk-11-jre-headless
+```
+## 
+
+## Running the API
+```bash
+python api.py
+```
+
+## Project Status
+🚧 In Development - Stage 3
 
 ## Development Stages
 
@@ -11,9 +45,9 @@ A REST API that generates FHIR resources from Synthea data. The API enables gene
 
 
 
-## Project Status
 
-🚧 In Development
+
+
 
 ## Input Parameters
 
