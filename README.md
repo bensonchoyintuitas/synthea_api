@@ -37,10 +37,10 @@ python api.py
 ## Calling the API
 ```bash
 # Generate a bundle (very heavyweight payload))
-curl -X POST http://localhost:5000/generate_patient_bundle
+curl -X POST http://localhost:5001/generate_patient_bundle
 
 # Extract a patient 
-curl -X POST http://localhost:5000/generate_patient
+curl -X POST http://localhost:5001/generate_patient
 ```
 
 
