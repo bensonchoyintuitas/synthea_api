@@ -31,7 +31,8 @@ sudo apt install openjdk-11-jre-headless
 ## Running the API
 ```bash
 # Run the API
-python api.py
+source .venv/bin/activate 
+python3 api.py
 ```
 
 ## Calling the API
