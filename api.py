@@ -5,130 +5,117 @@ import subprocess
 import glob
 import json
 from datetime import datetime
+import uuid
+from threading import Lock
+import tempfile
 
 app = Flask(__name__)
+file_operation_lock = Lock()
+
+# Define base output directory
+BASE_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'output', 'fhir')
+
+# Add a set to track used patient IDs with a lock
+used_patient_ids = set()
+patient_id_lock = Lock()
+
+def get_temp_output_dir():
+    """Create a unique subdirectory within the base output directory."""
+    os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
+    unique_dir = f'synthea_{datetime.now().strftime("%Y%m%d")}_{uuid.uuid4().hex[:8]}'
+    return os.path.join(BASE_OUTPUT_DIR, unique_dir)
+
+def is_patient_used(patient_id):
+    """Check if a patient ID has been used before."""
+    with patient_id_lock:
+        return patient_id in used_patient_ids
+
+def mark_patient_used(patient_id):
+    """Mark a patient ID as used."""
+    with patient_id_lock:
+        used_patient_ids.add(patient_id)
 
 @app.route('/generate_patient_bundle', methods=['POST'])
 def generate_patient_bundle():
+    output_dir = get_temp_output_dir()
     try:
-        print("Starting bundle generation process...")
+        print(f"Starting bundle generation process in {output_dir}...")
+        os.makedirs(os.path.join(output_dir, 'fhir'))
 
-        # 1. Delete contents of output folder
-        if os.path.exists('./output'):
-            print("Deleting existing output directory...")
-            shutil.rmtree('./output')
-        os.makedirs('./output/fhir')
-        print("Output directory prepared.")
-
-        # 2. Run Synthea jar with current date as seed
-        current_date = datetime.now().strftime('%Y%m%d')
-        command = f'java -Xms1g -Xmx4g -XX:+UseParallelGC -jar synthea-with-dependencies.jar -c synthea.properties -p 1 -r {current_date} --exporter.fhir.use_us_core_ig=false --exporter.hospital.fhir.export=false --exporter.practitioner.fhir.export=false'
-        print(f"Running Synthea with command: {command}")
-
-        process = subprocess.run(command.split(), 
-                               capture_output=True,
-                               text=True)
-        
-        if process.returncode != 0:
-            print("Synthea generation failed.")
-            print(f"Error details: {process.stderr}")
-            return jsonify({
-                'error': 'Synthea generation failed',
-                'details': process.stderr
-            }), 500
-        
-        print("Synthea generation completed successfully.")
-
-        # 3. Find and read the Bundle JSON file
-        fhir_files = glob.glob('./output/fhir/*.json')
-        print(f"Found {len(fhir_files)} FHIR JSON files.")
-
-        for file_path in fhir_files:
-            # Skip files that start with 'hospital' or 'practitioner'
-            if file_path.startswith('./output/fhir/hospital') or file_path.startswith('./output/fhir/practitioner'):
+        # Generate patient with retry logic
+        max_retries = 3
+        for attempt in range(max_retries):
+            current_date = datetime.now().strftime('%Y%m%d')
+            command = (f'java -Xms1g -Xmx4g -XX:+UseParallelGC -jar synthea-with-dependencies.jar '
+                      f'-c synthea.properties -p 1 -r {current_date} '
+                      f'--exporter.baseDirectory={output_dir} '
+                      f'--exporter.fhir.use_us_core_ig=false '
+                      f'--exporter.hospital.fhir.export=false '
+                      f'--exporter.practitioner.fhir.export=false')
+            
+            process = subprocess.run(command.split(), capture_output=True, text=True)
+            
+            if process.returncode != 0:
+                print(f"Synthea generation failed: {process.stderr}")
                 continue
 
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-                if data.get('resourceType') == 'Bundle':
-                    print(f"Bundle resource found in file: {file_path}")
-                    return jsonify(data)
-        
-        print("No Bundle resource found in output.")
-        return jsonify({
-            'error': 'No Bundle resource found in output'
-        }), 404
+            fhir_files = glob.glob(os.path.join(output_dir, 'fhir', '*.json'))
+            
+            for file_path in fhir_files:
+                if os.path.basename(file_path).startswith(('hospital', 'practitioner')):
+                    continue
+
+                with open(file_path, 'r') as f:
+                    bundle = json.load(f)
+                    if bundle.get('resourceType') == 'Bundle':
+                        # Extract patient and related resources
+                        patient_resource = None
+                        condition_resources = []
+                        
+                        for entry in bundle.get('entry', []):
+                            resource = entry.get('resource', {})
+                            if resource.get('resourceType') == 'Patient':
+                                patient_resource = resource
+                            elif resource.get('resourceType') == 'Condition':
+                                condition_resources.append(resource)
+                        
+                        if patient_resource:
+                            patient_id = patient_resource.get('id')
+                            if patient_id and not is_patient_used(patient_id):
+                                mark_patient_used(patient_id)
+                                # Return both patient and related resources
+                                return jsonify({
+                                    'patient': patient_resource,
+                                    'conditions': condition_resources,
+                                    'bundle': bundle  # Include full bundle for reference
+                                })
+
+            print(f"Attempt {attempt + 1}: Generated patient was already used, retrying...")
+            
+        return jsonify({'error': 'Could not generate unique patient after retries'}), 503
 
     except Exception as e:
-        print("An internal server error occurred.")
-        print(f"Error details: {str(e)}")
-        return jsonify({
-            'error': 'Internal server error',
-            'details': str(e)
-        }), 500
+        print(f"Error: {str(e)}")
+        return jsonify({'error': 'Internal server error', 'details': str(e)}), 500
+    
+    finally:
+        try:
+            if os.path.exists(output_dir):
+                shutil.rmtree(output_dir)
+        except Exception as e:
+            print(f"Warning: Failed to clean up directory {output_dir}: {str(e)}")
 
-@app.route('/generate_patient', methods=['POST'])
-def generate_patient():
+@app.route('/cleanup_used_patients', methods=['POST'])
+def cleanup_used_patients():
+    """Clear the set of used patient IDs."""
     try:
-        print("Starting patient generation process...")
-
-        # 1. Delete contents of output folder
-        if os.path.exists('./output'):
-            print("Deleting existing output directory...")
-            shutil.rmtree('./output')
-        os.makedirs('./output/fhir')
-        print("Output directory prepared.")
-
-        # 2. Run Synthea jar with current date as seed
-        current_date = datetime.now().strftime('%Y%m%d')
-        command = f'java -Xms1g -Xmx4g -XX:+UseParallelGC -jar synthea-with-dependencies.jar -c synthea.properties -p 1 -r {current_date} --exporter.fhir.use_us_core_ig=false --exporter.hospital.fhir.export=false --exporter.practitioner.fhir.export=false'
-        print(f"Running Synthea with command: {command}")
-
-        process = subprocess.run(command.split(), 
-                               capture_output=True,
-                               text=True)
-        
-        if process.returncode != 0:
-            print("Synthea generation failed.")
-            print(f"Error details: {process.stderr}")
-            return jsonify({
-                'error': 'Synthea generation failed',
-                'details': process.stderr
-            }), 500
-        
-        print("Synthea generation completed successfully.")
-
-        # 3. Find and read the Bundle JSON file
-        fhir_files = glob.glob('./output/fhir/*.json')
-        print(f"Found {len(fhir_files)} FHIR JSON files.")
-
-        for file_path in fhir_files:
-            # Skip files that start with 'hospital' or 'practitioner'
-            if file_path.startswith('./output/fhir/hospital') or file_path.startswith('./output/fhir/practitioner'):
-                continue
-
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-                if data.get('resourceType') == 'Bundle':
-                    print(f"Bundle resource found in file: {file_path}")
-                    for entry in data.get('entry', []):
-                        resource = entry.get('resource', {})
-                        if resource.get('resourceType') == 'Patient':
-                            print("Patient resource extracted.")
-                            return jsonify(resource)
-        
-        print("No Patient resource found in bundle.")
-        return jsonify({
-            'error': 'No Patient resource found in bundle'
-        }), 404
-
+        with patient_id_lock:
+            count = len(used_patient_ids)
+            used_patient_ids.clear()
+            return jsonify({'message': f'Cleared {count} used patient IDs'})
     except Exception as e:
-        print("An internal server error occurred.")
-        print(f"Error details: {str(e)}")
-        return jsonify({
-            'error': 'Internal server error',
-            'details': str(e)
-        }), 500
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
     app.run(debug=True, port=5001) 
