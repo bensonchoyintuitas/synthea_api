@@ -22,7 +22,7 @@ def generate_patient_bundle():
 
         # 2. Run Synthea jar with current date as seed
         current_date = datetime.now().strftime('%Y%m%d')
-        command = f'java -jar synthea-with-dependencies.jar -c synthea.properties -p 1 -r {current_date}'
+        command = f'java -Xms1g -Xmx4g -XX:+UseParallelGC -jar synthea-with-dependencies.jar -c synthea.properties -p 1 -r {current_date} --exporter.fhir.use_us_core_ig=false --exporter.hospital.fhir.export=false --exporter.practitioner.fhir.export=false'
         print(f"Running Synthea with command: {command}")
 
         process = subprocess.run(command.split(), 
@@ -81,7 +81,7 @@ def generate_patient():
 
         # 2. Run Synthea jar with current date as seed
         current_date = datetime.now().strftime('%Y%m%d')
-        command = f'java -jar synthea-with-dependencies.jar -c synthea.properties -p 1 -r {current_date}'
+        command = f'java -Xms1g -Xmx4g -XX:+UseParallelGC -jar synthea-with-dependencies.jar -c synthea.properties -p 1 -r {current_date} --exporter.fhir.use_us_core_ig=false --exporter.hospital.fhir.export=false --exporter.practitioner.fhir.export=false'
         print(f"Running Synthea with command: {command}")
 
         process = subprocess.run(command.split(), 
