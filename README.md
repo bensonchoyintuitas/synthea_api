@@ -7,6 +7,12 @@ A Flask-based REST API wrapper for Synthea patient data generator.
 - Java Runtime Environment (JRE)
 - Synthea with dependencies JAR file in the root directory (see [synthea-with-dependencies.md](/synthea-with-dependencies.md))
 
+## Running the API
+```bash
+# Run the API
+source .venv/bin/activate 
+python3 api.py
+```
 
 ## Installation
 1. Create a virtual environment and install dependencies:
@@ -28,12 +34,7 @@ sudo apt install openjdk-11-jre-headless
 ```
 ## 
 
-## Running the API
-```bash
-# Run the API
-source .venv/bin/activate 
-python3 api.py
-```
+
 
 ## Calling the API
 ```bash
