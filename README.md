@@ -38,11 +38,45 @@ sudo apt install openjdk-11-jre-headless
 
 ## Calling the API
 ```bash
-# Generate a bundle (very heavyweight payload))
+# Generate a single bundle (heavyweight payload))
 curl -X POST http://localhost:5001/generate_patient_bundle
+
+# Generate a batch of 10 patient bundles (query param)
+curl -X POST "http://localhost:5001/generate_patient_bundle?batch_size=10"
+
+# Or using JSON body
+curl -X POST http://localhost:5001/generate_patient_bundle \
+  -H 'Content-Type: application/json' \
+  -d '{"batch_size": 10}'
 
 # Extract a patient 
 curl -X POST http://localhost:5001/generate_patient
+```
+
+### Response shape
+
+- Single:
+```json
+{
+  "patient": { /* Patient resource */ },
+  "conditions": [ /* Condition resources */ ],
+  "bundle": { /* Full FHIR Bundle */ }
+}
+```
+
+- Batch:
+```json
+{
+  "requested": 10,
+  "returned": 10,
+  "results": [
+    {
+      "patient": { /* Patient */ },
+      "conditions": [ /* Conditions */ ],
+      "bundle": { /* Bundle */ }
+    }
+  ]
+}
 ```
 
 
